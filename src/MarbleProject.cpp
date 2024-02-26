@@ -3,12 +3,14 @@
 #include "SevenSegmentSerial.h"
 #include "Servo.h"
 
+//declare hole sensors, servos, piezo buzzer, and score/attempts displays
 InterruptIn sensor1(p18), sensor2(p17), sensor3(p16), sensor4(p15), sensor5(p14);
 Servo servo1(p22), servo2(p23), servo3(p24), servo4(p25), servo5(p26);
 PwmOut buzzer(p21);
 BusOut displayMove (p6, p7, p8, p9, p10, p11, p12, p13);
 SevenSegmentSerial displayScore(UART_MODE, p28);
 
+//bool variables to indicate if each score hole has been mad yet and final victory/loss condition
 bool numSensors[] = {false, false, false, false, false};
 bool victoryFlag;
 bool loseFlag;
@@ -19,15 +21,18 @@ DigitalOut led2(LED2);
 DigitalOut led3(LED3);
 DigitalOut led4(LED4);
 
+//declare hole sensors, array for servo positions to move through, and char array for attempt display
 int sensors[] = {sensor1, sensor2, sensor3, sensor4, sensor5};
 float positions[] ={0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
 char num[] = {0xC0, 0xF9, 0xA4, 0xB0, 0x99, 0x92, 0x82, 0xF8, 0x80, 0x90}; //0 - 9
 
+//declare score and attempts variables
 int totalScore = 0;
 int currentMove = 8;
 Timer debounceTimer;
 Timer updateDisplay;
 
+//victory/loss conditions with appropriate display
 void displayString() {
     if (victoryFlag) {
         displayScore.write("GOOD");
@@ -42,7 +47,7 @@ void displayString() {
     }
 }
 
-//functions that plays different tone for each sensor and adds score to total
+//functions that plays different tone for each sensor and adds hole score to total
 void startSong() {
     int freqs[] = {493, 987, 739, 622, 987, 0, 659, 0, 
                     523, 1046, 783, 622, 1046, 0, 659, 0,  
@@ -279,6 +284,7 @@ void snakeAlert() {
     buzzer.period(.02);
 }
 
+//preset servo posiitons to optimize the chance that each hole is made
 void hole1() {
     buzzer.period(0.5);
     servo1 = positions[3];
@@ -319,6 +325,7 @@ void hole5() {
     buzzer.period(0.0);
 }
 
+//update display while game is running
 void displayUpdate(){
     if (updateDisplay.read() > 1) {
         if (currentMove > 0) {
@@ -333,6 +340,7 @@ void displayUpdate(){
     }
 }
 
+//main method runs a loop checking each holes made/not made status and keeps track of score/attempts
 int main() {
     displayScore = totalScore;
     displayMove = num[currentMove];
@@ -349,6 +357,7 @@ int main() {
     sensor4.rise(&pokemonSound);
     sensor5.rise(&snakeAlert);
 
+    //once a hole is made servos switch to next hole that has not been made yet(can be made out of order)
     while (1) {
         if (!numSensors[0]) {
             hole1();
